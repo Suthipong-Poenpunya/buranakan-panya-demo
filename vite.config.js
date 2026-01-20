@@ -10,7 +10,7 @@ export default defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
-    base: '/buranakan-panya-demo/',
+    base: './',
     server: {
         port: 3000, // กำหนด Port ที่ต้องการรัน (เช่น localhost:3000)
     },

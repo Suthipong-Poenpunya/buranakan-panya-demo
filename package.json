@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "base": "https://github.com/Suthipong-Poenpunya/buranakan-panya-demo",
+  "homepage": "https://suthipong-poenpunya.github.io/buranakan-panya-demo/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
