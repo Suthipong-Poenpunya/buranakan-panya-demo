@@ -10,7 +10,7 @@ import {
 // 🔧 ส่วนตั้งค่า (Configuration) - วางลิงก์ที่คุณได้จาก Deploy ตรงนี้
 // ==================================================================
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFE7SmDDcDKxwUKPn4URxUgcZXkQRYO-fqfpeHQ5hLAI5uGx2PFcL0xFr2KBPnQ4tD/exec"; 
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFE7SmDDcDKxwUKPn4URxUgcZXkQRYO-fqfpeHQ5hLAI5uGx2PFcL0xFr2KBPnQ4tD/exec";
 
 // ==================================================================
 
@@ -289,8 +289,7 @@ const KruLekaModule = ({ addActivity }) => {
         });
         setData(newData);
     };
-
-    // --- ส่วนที่แก้ไข: เชื่อมต่อ Google Sheets ของจริง ---
+    // --- ส่วนที่แก้ไข: เชื่อมต่อ Google Sheets ของจริง (ส่งข้อมูลทุกคน) ---
     const handleSubmit = async () => {
         if (hasErrors) return;
         setIsSaving(true); // เริ่มหมุน
@@ -300,17 +299,24 @@ const KruLekaModule = ({ addActivity }) => {
                 throw new Error("กรุณาใส่ URL ของ Google Apps Script ที่ด้านบนไฟล์ App.jsx ก่อนครับ");
             }
 
-            // ส่งข้อมูลแถวแรกไป (ตัวอย่าง)
-            const studentData = data[0];
+            // แก้ไขตรงนี้: ส่ง data ทั้งก้อน (Array ของนักเรียนทุกคน) ไปเลย
+            // ไม่ใช่แค่ data[0] แล้ว
+            const payload = data;
 
+            // ใช้การส่งแบบ text/plain เพื่อเลี่ยงปัญหา CORS Preflight ที่ซับซ้อนของ Google
             await fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // สำคัญมาก
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(studentData)
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify(payload)
             });
 
-            addActivity({ type: 'ocr', text: `บันทึกเกรดลง Google Sheets สำเร็จ!`, time: 'เมื่อสักครู่' });
+            // เนื่องจาก no-cors เราจะไม่รู้ว่า Server ตอบอะไรกลับมา (status = 0)
+            // แต่ถ้าไม่ error ใน block try นี้ ก็ถือว่าส่ง request ออกไปสำเร็จ
+
+            addActivity({ type: 'ocr', text: `บันทึกเกรดนักเรียน ${data.length} คน ลง Google Sheets สำเร็จ!`, time: 'เมื่อสักครู่' });
             setStep(4);
 
         } catch (error) {
@@ -887,7 +893,7 @@ const BuranakanPanyaApp = () => {
 
             <div className="mt-12 text-center border-t border-slate-200 pt-8 mb-8">
                 <p className="text-slate-400 text-sm font-medium">© 2026 Buranakan-Panya Project. All Rights Reserved.</p>
-                <p className="text-slate-400 text-xs mt-1">Prototype v2.0 (Step 1: Real Database)</p>
+                <p className="text-slate-400 text-xs mt-1">Prototype v1.2 | Powered by OpenThaiGPT & Hyperledger Besu</p>
             </div>
         </Layout>
     );
