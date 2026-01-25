@@ -6,6 +6,15 @@ import {
     Share2, Hash, Clock, Database, Trash2, Plus
 } from 'lucide-react';
 
+// ==================================================================
+// 🔧 ส่วนตั้งค่า (Configuration) - วางลิงก์ที่คุณได้จาก Deploy ตรงนี้
+// ==================================================================
+
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFE7SmDDcDKxwUKPn4URxUgcZXkQRYO-fqfpeHQ5hLAI5uGx2PFcL0xFr2KBPnQ4tD/exec"; 
+
+// ==================================================================
+
+
 // --- Shared Utility Components ---
 
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -211,6 +220,7 @@ const KruLekaModule = ({ addActivity }) => {
     const [processingProgress, setProcessingProgress] = useState(0);
     const [data, setData] = useState([]);
     const [hasErrors, setHasErrors] = useState(false);
+    const [isSaving, setIsSaving] = useState(false); // เพิ่มสถานะ Loading
 
     // Mock initial data generation based on "AI"
     const generateMockData = () => [
@@ -280,10 +290,34 @@ const KruLekaModule = ({ addActivity }) => {
         setData(newData);
     };
 
-    const handleSubmit = () => {
+    // --- ส่วนที่แก้ไข: เชื่อมต่อ Google Sheets ของจริง ---
+    const handleSubmit = async () => {
         if (hasErrors) return;
-        addActivity({ type: 'ocr', text: `ส่งเกรดวิชาคณิตศาสตร์ (ป.4/1) จำนวน ${data.length} รายการ`, time: 'เมื่อสักครู่' });
-        setStep(4);
+        setIsSaving(true); // เริ่มหมุน
+
+        try {
+            if (!APPS_SCRIPT_URL) {
+                throw new Error("กรุณาใส่ URL ของ Google Apps Script ที่ด้านบนไฟล์ App.jsx ก่อนครับ");
+            }
+
+            // ส่งข้อมูลแถวแรกไป (ตัวอย่าง)
+            const studentData = data[0];
+
+            await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // สำคัญมาก
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(studentData)
+            });
+
+            addActivity({ type: 'ocr', text: `บันทึกเกรดลง Google Sheets สำเร็จ!`, time: 'เมื่อสักครู่' });
+            setStep(4);
+
+        } catch (error) {
+            alert(`เกิดข้อผิดพลาด: ${error.message}`);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -359,12 +393,20 @@ const KruLekaModule = ({ addActivity }) => {
                                 <button onClick={() => setStep(1)} className="px-4 py-2 text-slate-600 text-sm hover:bg-white rounded-lg border border-transparent hover:border-slate-200">ยกเลิก</button>
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={hasErrors}
+                                    disabled={hasErrors || isSaving}
                                     className={`px-6 py-2 rounded-lg text-sm font-bold text-white shadow-sm flex items-center transition-all ${
-                                        hasErrors ? 'bg-slate-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 hover:shadow-md'
+                                        hasErrors || isSaving ? 'bg-slate-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 hover:shadow-md'
                                     }`}
                                 >
-                                    <Send className="w-4 h-4 mr-2" /> ยืนยันข้อมูล
+                                    {isSaving ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> กำลังบันทึก...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="w-4 h-4 mr-2" /> ยืนยันข้อมูล
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -827,7 +869,6 @@ const PanyaChainModule = () => {
 
 const BuranakanPanyaApp = () => {
     const [activeModule, setActiveModule] = useState('home');
-    // Global State for Activity Feed simulation
     const [recentActivities, setRecentActivities] = useState([
         { type: 'ocr', text: 'ส่งเกรดวิชาภาษาไทย (ป.4/1) สำเร็จ', time: '2 ชั่วโมงที่แล้ว' },
         { type: 'plan', text: 'สร้างแผนการสอน "พลังงานทดแทน"', time: '5 ชั่วโมงที่แล้ว' }
@@ -846,7 +887,7 @@ const BuranakanPanyaApp = () => {
 
             <div className="mt-12 text-center border-t border-slate-200 pt-8 mb-8">
                 <p className="text-slate-400 text-sm font-medium">© 2026 Buranakan-Panya Project. All Rights Reserved.</p>
-                <p className="text-slate-400 text-xs mt-1">Prototype v1.2 | Powered by OpenThaiGPT & Hyperledger Besu</p>
+                <p className="text-slate-400 text-xs mt-1">Prototype v2.0 (Step 1: Real Database)</p>
             </div>
         </Layout>
     );
